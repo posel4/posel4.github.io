@@ -3,18 +3,17 @@
   <head>
     <meta charset="utf-8" />
     <title>Content Manager</title>
-    <script src="https://unpkg.com/decap-cms@3.0.0/dist/decap-cms.js"></script>
+    <script src="https://unpkg.com/decap-cms@3.6.2/dist/decap-cms.js"></script>
   </head>
   <body>
+    <div id="nc-root"></div>
+
     <script>
-      window.CMS_MANUAL_INIT = true;
-    </script>
-    <script>
-      document.addEventListener("DOMContentLoaded", function () {
+      window.addEventListener('DOMContentLoaded', function () {
         if (window.CMS) {
           window.CMS.init();
         } else {
-          console.error("Decap CMS failed to load.");
+          console.error('Decap CMS failed to load.');
         }
       });
     </script>
