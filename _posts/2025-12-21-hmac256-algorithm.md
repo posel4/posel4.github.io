@@ -5,11 +5,11 @@ categories: [Auth]
 tags: [hmac, sha256, jwt, signature, algorithm]
 ---
 
-## HMAC256 알고리즘이란?
+# HMAC256 알고리즘
 
-### HMAC = Hash-based Message Authentication Code
+## HMAC이란?
 
-**비밀키를 사용해서 메시지의 무결성과 인증을 보장하는 알고리즘**입니다.
+**HMAC (Hash-based Message Authentication Code)** 은 비밀키를 사용해서 메시지의 무결성과 인증을 보장하는 알고리즘입니다.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -36,7 +36,7 @@ tags: [hmac, sha256, jwt, signature, algorithm]
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### 왜 HMAC256을 쓰나요?
+## 왜 HMAC256을 쓰나요?
 
 | 특성          | 설명                                |
 | :------------ | :---------------------------------- |
@@ -47,16 +47,40 @@ tags: [hmac, sha256, jwt, signature, algorithm]
 
 
 
-## 검증 과정
+## JWT에서 HMAC256 사용
+
+JWT(JSON Web Token)의 서명 알고리즘으로 HMAC256(HS256)이 널리 사용됩니다.
+
+### JWT 생성 (서명)
 
 ```java
-// Authentication.java에서 하는 일
-Algorithm hs256 = Algorithm.HMAC256(secret);  // 같은 비밀키로 알고리즘 설정
-JWTVerifier verifier = JWT.require(hs256).build();
-DecodedJWT jwt = verifier.verify(jwtToken);   // 서명 검증!
+// JWT 생성 예시 (auth0 java-jwt 라이브러리)
+Algorithm algorithm = Algorithm.HMAC256(secretKey);
+
+String token = JWT.create()
+    .withClaim("userId", "12345")
+    .withClaim("role", "admin")
+    .withIssuedAt(new Date())
+    .withExpiresAt(expirationDate)
+    .sign(algorithm);  // HMAC256으로 서명
 ```
 
-검증 원리:
+### JWT 검증
+
+```java
+// JWT 검증 예시
+Algorithm algorithm = Algorithm.HMAC256(secretKey);  // 같은 비밀키
+JWTVerifier verifier = JWT.require(algorithm).build();
+
+try {
+    DecodedJWT jwt = verifier.verify(token);  // 서명 검증
+    String userId = jwt.getClaim("userId").asString();
+} catch (JWTVerificationException e) {
+    // 서명 불일치 또는 만료된 토큰
+}
+```
+
+## 검증 원리
 
 ```
 1. 받은 JWT에서 Header와 Payload 추출
@@ -73,43 +97,31 @@ DecodedJWT jwt = verifier.verify(jwtToken);   // 서명 검증!
 ┌─────────────────────────────────────────────────────────────────┐
 │                         비밀키 (Secret)                         │
 │                                                                 │
-│  • 인증 서버와 검증 서버가 동일한 키를 공유                      │
+│  • 토큰 생성 서버와 검증 서버가 동일한 키를 공유해야 함           │
 │  • 이 키가 노출되면 누구나 JWT를 위조할 수 있음!                 │
-│  • 그래서 Secret Key Management로 관리                          │
+│  • 환경 변수 또는 Secret Key Management로 안전하게 관리          │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+---
 
+## HMAC256 vs RSA
 
-## JWT 생성 예시
-
-```java
-public static String generateJwt() {
-    // 1. 알고리즘 설정 (비밀키 포함)
-    Algorithm hs256 = Algorithm.HMAC256("YourSecretKey");
-
-    // 2. 만료 시간 설정
-    Calendar expiresAt = Calendar.getInstance();
-    expiresAt.add(Calendar.MINUTE, 10);
-
-    // 3. JWT 생성
-    return JWT.create()
-            .withClaim("tenantId", "0123456789")   // Payload에 데이터 추가
-            .withClaim("memberId", "123456789")
-            .withExpiresAt(expiresAt.getTime())
-            .withIssuedAt(new Date())
-            .sign(hs256);  // ← 여기서 HMAC256으로 서명!
-}
-```
+| 구분 | HMAC256 (대칭키) | RSA (비대칭키) |
+|------|-----------------|----------------|
+| 키 | 하나의 비밀키 공유 | 공개키/개인키 쌍 |
+| 속도 | 빠름 | 느림 |
+| 사용 사례 | 단일 서버, 마이크로서비스 | 분산 시스템, 외부 검증 |
+| 보안 | 키 공유 필요 | 공개키만 배포 가능 |
 
 ---
 
 ## 요약
 
-| 질문                     | 답변                                    |
-| :----------------------- | :-------------------------------------- |
-| JWT는 누가 만드나요?     | **인증 서버**                           |
-| 검증 서버는 뭘 하나요?   | JWT **검증만** 수행                     |
-| HMAC256은 뭔가요?        | 비밀키를 사용한 해시 기반 서명 알고리즘 |
-| 왜 HMAC256을 쓰나요?     | 빠르고, 비밀키로 변조 방지 가능         |
+| 질문 | 답변 |
+| :--- | :--- |
+| HMAC256은 뭔가요? | 비밀키를 사용한 해시 기반 서명 알고리즘 |
+| 왜 HMAC256을 쓰나요? | 빠르고, 비밀키로 변조 방지 가능 |
+| JWT에서 어떻게 쓰나요? | 토큰 서명(생성)과 검증에 사용 |
+| 주의할 점은? | 비밀키 노출 시 토큰 위조 가능 |

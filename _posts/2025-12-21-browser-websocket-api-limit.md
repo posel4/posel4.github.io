@@ -5,7 +5,7 @@ categories: [WebSocket]
 tags: [websocket, browser, authentication, security]
 ---
 
-## 브라우저 WebSocket 헤더 제한 문제
+# 브라우저 WebSocket API 헤더 제한 문제
 
 브라우저의 `new WebSocket()` API는 커스텀 헤더를 지원하지 않습니다:
 
@@ -22,7 +22,7 @@ const ws = new WebSocket('ws://server/ws/123/456', {
 
 ## 방법 1: Sec-WebSocket-Protocol 헤더 활용
 
-WebSocket 표준에서 유일하게 설정 가능한 헤더인 Sec-WebSocket-Protocol에 토큰을 담는 방식입니다.
+WebSocket 표준에서 유일하게 설정 가능한 헤더인 `Sec-WebSocket-Protocol`에 토큰을 담는 방식입니다.
 
 ### 클라이언트 (브라우저)
 
@@ -80,7 +80,6 @@ ws.onmessage = (event) => {
 ### 서버
 
 ```java
-// WebSocket 핸들러에서 첫 메시지 처리
 @Override
 public Mono<Void> handle(WebSocketSession session) {
     return session.receive()
@@ -105,8 +104,6 @@ public Mono<Void> handle(WebSocketSession session) {
 
 ---
 
-
-
 ## 방법 3: 쿠키 기반 인증
 
 HttpOnly 쿠키에 토큰을 저장하고, WebSocket 연결 시 자동 전송되는 방식입니다.
@@ -129,14 +126,8 @@ const ws = new WebSocket('ws://server/ws/123/456');
 ### 서버
 
 ```java
-// 쿠키에서 세션 ID 추출
-private String extractSessionIdFromCookie(ServerHttpRequest request) {
-    String cookieHeader = request.getHeaders().getFirst("Cookie");
-    // ...
-}
-
-// 쿠키에 JWT 토큰도 저장하면 됨
 private String extractTokenFromCookie(ServerHttpRequest request) {
+    String cookieHeader = request.getHeaders().getFirst("Cookie");
     // AUTH_TOKEN=eyJhbGci... 형태로 추출
 }
 ```
@@ -149,8 +140,6 @@ private String extractTokenFromCookie(ServerHttpRequest request) {
 
 ---
 
-
-
 ## 방법 4: 일회용 티켓 방식 (권장)
 
 REST API로 일회용 티켓을 발급받고, 이를 URL 파라미터로 전달하는 방식입니다.
@@ -160,7 +149,7 @@ REST API로 일회용 티켓을 발급받고, 이를 URL 파라미터로 전달�
 ```
 1. 클라이언트 → 서버: POST /api/ws-ticket (Authorization: Bearer JWT)
 2. 서버 → 클라이언트: { "ticket": "abc123", "expiresIn": 30 }
-3. 클라이언트 → 서버: WebSocket ws://server/ws/123/456?ticket=abc123
+3. 클라이언트 → 서버: WebSocket ws://server/ws?ticket=abc123
 4. 서버: 티켓 검증 후 삭제 (일회용)
 ```
 
@@ -174,14 +163,14 @@ const response = await fetch('/api/ws-ticket', {
 const { ticket } = await response.json();
 
 // 2. 티켓으로 WebSocket 연결
-const ws = new WebSocket(`ws://server/ws/123/456?ticket=${ticket}`);
+const ws = new WebSocket(`ws://server/ws?ticket=${ticket}`);
 ```
 
 ### 서버 - 티켓 발급 API
 
 ```java
 @PostMapping("/api/ws-ticket")
-public Mono<TicketResponse> issueTicket(@RequestHeader("Authorization") String auth) {
+public TicketResponse issueTicket(@RequestHeader("Authorization") String auth) {
     String jwt = auth.substring(7);  // "Bearer " 제거
 
     // JWT 검증
@@ -191,31 +180,7 @@ public Mono<TicketResponse> issueTicket(@RequestHeader("Authorization") String a
     String ticket = UUID.randomUUID().toString();
     ticketStore.put(ticket, authentication, Duration.ofSeconds(30));
 
-    return Mono.just(new TicketResponse(ticket, 30));
-}
-```
-
-### 서버 - WebSocket 티켓 검증
-
-```java
-private String extractBearerToken(ServerHttpRequest request) {
-    // 1. Authorization 헤더 확인 (Native 클라이언트용)
-    String authHeader = request.getHeaders().getFirst("Authorization");
-    if (authHeader != null && authHeader.startsWith("Bearer ")) {
-        return authHeader.substring(7);
-    }
-
-    // 2. 티켓 파라미터 확인 (브라우저용)
-    String ticket = request.getQueryParams().getFirst("ticket");
-    if (ticket != null) {
-        Authentication auth = ticketStore.getAndRemove(ticket);  // 일회용
-        if (auth != null) {
-            return auth.getJwtToken();  // 또는 직접 Authentication 반환
-        }
-        throw new AuthenticationException("Invalid or expired ticket");
-    }
-
-    throw new AuthenticationException("Authorization header or ticket required");
+    return new TicketResponse(ticket, 30);
 }
 ```
 
@@ -242,17 +207,12 @@ private String extractBearerToken(ServerHttpRequest request) {
 ## 추천
 
 **보안이 중요하다면**: 방법 4 (일회용 티켓)
-
 - JWT가 URL에 직접 노출되지 않음
 - 티켓이 탈취되어도 일회용이라 재사용 불가
-- Native 클라이언트는 Authorization 헤더, 브라우저는 티켓 사용
 
 **빠른 구현이 필요하다면**: 방법 1 (Sec-WebSocket-Protocol)
-
 - 가장 간단한 구현
 - 브라우저 네이티브 지원
-
-
 
 ---
 
@@ -263,3 +223,10 @@ private String extractBearerToken(ServerHttpRequest request) {
 | 서버 (Java, Node.js 등)  | ✅ 가능                  | 불필요    |
 | Native 앱 (iOS, Android) | ✅ 가능                  | 불필요    |
 | 브라우저 JavaScript      | ❌ 불가능                | 필요      |
+
+---
+
+## 참고
+
+- [Ably - WebSocket Authentication](https://ably.com/blog/websocket-authentication)
+- [RFC 6455 - The WebSocket Protocol](https://datatracker.ietf.org/doc/html/rfc6455)
