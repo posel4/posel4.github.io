@@ -1,7 +1,7 @@
 ---
 title: "브라우저 WebSocket API 헤더 제한 문제"
-date: 2024-12-21
-categories: [웹소켓]
+date: 2025-12-21
+categories: [WebSocket]
 tags: [websocket, browser, authentication, security]
 ---
 

@@ -1,7 +1,7 @@
 ---
 title: "HMAC256 알고리즘"
-date: 2024-12-21
-categories: [인증과 인가]
+date: 2025-12-21
+categories: [Auth]
 tags: [hmac, sha256, jwt, signature, algorithm]
 ---
 

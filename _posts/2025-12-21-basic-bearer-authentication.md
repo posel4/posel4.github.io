@@ -1,7 +1,7 @@
 ---
 title: "Basic 인증과 Bearer 인증의 모든 것"
-date: 2024-12-21
-categories: [인증과 인가]
+date: 2025-12-21
+categories: [Auth]
 tags: [http, authentication, basic, bearer, oauth]
 ---
 

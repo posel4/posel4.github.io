@@ -1,7 +1,7 @@
 ---
 title: "Authorization Header란?"
-date: 2024-12-21
-categories: [인증과 인가]
+date: 2025-12-21
+categories: [Auth]
 tags: [http, header, authorization, authentication]
 ---
 

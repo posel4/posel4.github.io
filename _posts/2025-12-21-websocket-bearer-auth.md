@@ -1,7 +1,7 @@
 ---
 title: "WebSocket Upgrade 요청에서 Bearer 인증 사용 가능 여부"
-date: 2024-12-21
-categories: [웹소켓]
+date: 2025-12-21
+categories: [WebSocket]
 tags: [websocket, bearer, authentication, browser]
 ---
 
