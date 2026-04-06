@@ -5,6 +5,7 @@ import MdxContent from "@/components/MdxContent";
 import TableOfContents from "@/components/TableOfContents";
 import SeriesNav from "@/components/SeriesNav";
 import TagBadge from "@/components/TagBadge";
+import PostActions from "@/components/PostActions";
 
 interface PostPageProps {
   params: Promise<{ slug: string }>;
@@ -62,6 +63,7 @@ export default async function PostPage({ params }: PostPageProps) {
                   {cat}
                 </span>
               ))}
+              <PostActions slug={slug} />
             </div>
             <div className="mt-3 flex flex-wrap gap-1.5">
               {post.tags.map((tag) => (

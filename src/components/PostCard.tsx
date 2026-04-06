@@ -8,23 +8,23 @@ interface PostCardProps {
 
 export default function PostCard({ post }: PostCardProps) {
   return (
-    <article className="group flex flex-col overflow-hidden rounded-2xl border border-card-border bg-card-bg transition-all hover:shadow-lg hover:-translate-y-1">
+    <article className="group flex flex-col overflow-hidden rounded-2xl bg-card-bg shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
       {post.cover && (
         <div className="aspect-video overflow-hidden">
           <img
             src={post.cover}
             alt={post.title}
-            className="h-full w-full object-cover transition-transform group-hover:scale-105"
+            className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
           />
         </div>
       )}
-      <div className="flex flex-1 flex-col p-5">
+      <div className="flex flex-1 flex-col py-6 px-5">
         <Link href={`/posts/${post.slug}`} className="group/title">
-          <h2 className="text-lg font-bold leading-snug text-foreground group-hover/title:text-primary transition-colors line-clamp-2">
+          <h2 className="text-xl font-bold leading-snug text-foreground group-hover/title:text-primary transition-colors line-clamp-2">
             {post.title}
           </h2>
         </Link>
-        <p className="mt-2 flex-1 text-sm leading-relaxed text-muted line-clamp-3">
+        <p className="mt-3 flex-1 text-sm leading-relaxed text-muted line-clamp-3">
           {post.description}
         </p>
         <div className="mt-4 flex flex-wrap gap-1.5">
@@ -32,7 +32,7 @@ export default function PostCard({ post }: PostCardProps) {
             <TagBadge key={tag} tag={tag} />
           ))}
         </div>
-        <div className="mt-3 flex items-center justify-between text-xs text-muted">
+        <div className="mt-4 flex items-center justify-between text-xs text-muted">
           <time dateTime={post.date}>
             {new Date(post.date).toLocaleDateString("ko-KR", {
               year: "numeric",
