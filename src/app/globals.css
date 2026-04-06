@@ -1,0 +1,96 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --color-primary: #12b886;
+  --color-primary-dark: #0ca678;
+  --background: #ffffff;
+  --foreground: #1a1a1a;
+  --card-bg: #ffffff;
+  --card-border: #e5e7eb;
+  --muted: #6b7280;
+  --code-bg: #f6f8fa;
+}
+
+.dark {
+  --background: #121212;
+  --foreground: #ececec;
+  --card-bg: #1e1e1e;
+  --card-border: #2d2d2d;
+  --muted: #9ca3af;
+  --code-bg: #1e1e1e;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card-bg: var(--card-bg);
+  --color-card-border: var(--card-border);
+  --color-muted: var(--muted);
+  --color-code-bg: var(--code-bg);
+  --color-primary: #12b886;
+  --color-primary-dark: #0ca678;
+  --font-sans: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  transition: background-color 0.2s, color 0.2s;
+}
+
+/* Typography prose overrides */
+.prose {
+  --tw-prose-body: var(--foreground);
+  --tw-prose-headings: var(--foreground);
+  --tw-prose-links: var(--color-primary);
+  --tw-prose-code: var(--foreground);
+  --tw-prose-pre-bg: var(--code-bg);
+  max-width: 100%;
+}
+
+.prose pre {
+  border: 1px solid var(--card-border);
+  border-radius: 0.5rem;
+}
+
+.prose code {
+  font-family: var(--font-mono);
+}
+
+.prose :where(code):not(:where(pre *)) {
+  background: var(--code-bg);
+  padding: 0.15em 0.4em;
+  border-radius: 0.25rem;
+  font-size: 0.875em;
+}
+
+.prose img {
+  border-radius: 0.5rem;
+}
+
+.prose table {
+  font-size: 0.9em;
+}
+
+.prose blockquote {
+  border-left-color: var(--color-primary);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--card-border);
+  border-radius: 3px;
+}
