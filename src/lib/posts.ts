@@ -107,6 +107,25 @@ export function getPostsBySeries(series: string): PostMeta[] {
     .sort((a, b) => (a.seriesOrder || 0) - (b.seriesOrder || 0));
 }
 
+export function getAllCategories(): { name: string; count: number }[] {
+  const posts = getAllPosts();
+  const categoryMap = new Map<string, number>();
+
+  posts.forEach((post) => {
+    post.categories.forEach((category) => {
+      categoryMap.set(category, (categoryMap.get(category) || 0) + 1);
+    });
+  });
+
+  return Array.from(categoryMap.entries())
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count);
+}
+
+export function getPostsByCategory(category: string): PostMeta[] {
+  return getAllPosts().filter((post) => post.categories.includes(category));
+}
+
 export function getAllSlugs(): string[] {
   const fileNames = fs.readdirSync(postsDirectory);
   return fileNames

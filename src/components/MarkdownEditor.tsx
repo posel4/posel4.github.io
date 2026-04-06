@@ -1,27 +1,57 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import dynamic from "next/dynamic";
 
 const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
 
-interface MarkdownEditorProps {
-  onPublish: (data: {
-    title: string;
-    content: string;
-    tags: string;
-    series: string;
-    description: string;
-  }) => Promise<void>;
+export interface PostFormData {
+  title: string;
+  content: string;
+  description: string;
+  categories: string;
+  tags: string;
+  series: string;
+  seriesOrder: string;
+  cover: string;
 }
 
-export default function MarkdownEditor({ onPublish }: MarkdownEditorProps) {
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [tags, setTags] = useState("");
-  const [series, setSeries] = useState("");
-  const [description, setDescription] = useState("");
+interface MarkdownEditorProps {
+  onPublish: (data: PostFormData) => Promise<void>;
+  onDelete?: () => Promise<void>;
+  initialData?: Partial<PostFormData>;
+  isEditMode?: boolean;
+}
+
+export default function MarkdownEditor({
+  onPublish,
+  onDelete,
+  initialData,
+  isEditMode = false,
+}: MarkdownEditorProps) {
+  const [title, setTitle] = useState(initialData?.title || "");
+  const [content, setContent] = useState(initialData?.content || "");
+  const [description, setDescription] = useState(initialData?.description || "");
+  const [categories, setCategories] = useState(initialData?.categories || "");
+  const [tags, setTags] = useState(initialData?.tags || "");
+  const [series, setSeries] = useState(initialData?.series || "");
+  const [seriesOrder, setSeriesOrder] = useState(initialData?.seriesOrder || "");
+  const [cover, setCover] = useState(initialData?.cover || "");
   const [publishing, setPublishing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    if (initialData) {
+      if (initialData.title) setTitle(initialData.title);
+      if (initialData.content) setContent(initialData.content);
+      if (initialData.description) setDescription(initialData.description);
+      if (initialData.categories) setCategories(initialData.categories);
+      if (initialData.tags) setTags(initialData.tags);
+      if (initialData.series) setSeries(initialData.series);
+      if (initialData.seriesOrder) setSeriesOrder(initialData.seriesOrder);
+      if (initialData.cover) setCover(initialData.cover);
+    }
+  }, [initialData]);
 
   const handlePublish = useCallback(async () => {
     if (!title.trim()) {
@@ -35,46 +65,110 @@ export default function MarkdownEditor({ onPublish }: MarkdownEditorProps) {
 
     setPublishing(true);
     try {
-      await onPublish({ title, content, tags, series, description });
+      await onPublish({
+        title,
+        content,
+        description,
+        categories,
+        tags,
+        series,
+        seriesOrder,
+        cover,
+      });
     } catch (error) {
-      alert("발행 실패: " + (error instanceof Error ? error.message : "Unknown error"));
+      alert(
+        "발행 실패: " +
+          (error instanceof Error ? error.message : "Unknown error")
+      );
     } finally {
       setPublishing(false);
     }
-  }, [title, content, tags, series, description, onPublish]);
+  }, [title, content, description, categories, tags, series, seriesOrder, cover, onPublish]);
+
+  const handleDelete = useCallback(async () => {
+    if (!onDelete) return;
+    if (!confirm("정말 이 글을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.")) return;
+
+    setDeleting(true);
+    try {
+      await onDelete();
+    } catch (error) {
+      alert(
+        "삭제 실패: " +
+          (error instanceof Error ? error.message : "Unknown error")
+      );
+    } finally {
+      setDeleting(false);
+    }
+  }, [onDelete]);
+
+  const inputClass =
+    "w-full rounded-xl border border-card-border bg-card-bg px-4 py-2.5 text-sm text-foreground placeholder:text-muted/50 focus:border-primary focus:outline-none transition-colors";
 
   return (
     <div className="space-y-4">
+      {/* Title */}
       <input
         type="text"
         placeholder="제목을 입력하세요"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        className="w-full rounded-lg border border-card-border bg-card-bg px-4 py-3 text-2xl font-bold text-foreground placeholder:text-muted/50 focus:border-primary focus:outline-none"
+        className="w-full rounded-xl border border-card-border bg-card-bg px-4 py-3 text-2xl font-bold text-foreground placeholder:text-muted/50 focus:border-primary focus:outline-none transition-colors"
       />
+
+      {/* Description */}
       <input
         type="text"
         placeholder="설명 (옵션)"
         value={description}
         onChange={(e) => setDescription(e.target.value)}
-        className="w-full rounded-lg border border-card-border bg-card-bg px-4 py-2 text-sm text-foreground placeholder:text-muted/50 focus:border-primary focus:outline-none"
+        className={inputClass}
       />
+
+      {/* Categories + Tags */}
       <div className="flex gap-3">
         <input
           type="text"
-          placeholder="태그 (쉼표로 구분)"
+          placeholder="카테고리 (쉼표 구분)"
+          value={categories}
+          onChange={(e) => setCategories(e.target.value)}
+          className={`flex-1 ${inputClass}`}
+        />
+        <input
+          type="text"
+          placeholder="태그 (쉼표 구분)"
           value={tags}
           onChange={(e) => setTags(e.target.value)}
-          className="flex-1 rounded-lg border border-card-border bg-card-bg px-4 py-2 text-sm text-foreground placeholder:text-muted/50 focus:border-primary focus:outline-none"
+          className={`flex-1 ${inputClass}`}
         />
+      </div>
+
+      {/* Series + Order + Cover */}
+      <div className="flex gap-3">
         <input
           type="text"
           placeholder="시리즈 (옵션)"
           value={series}
           onChange={(e) => setSeries(e.target.value)}
-          className="flex-1 rounded-lg border border-card-border bg-card-bg px-4 py-2 text-sm text-foreground placeholder:text-muted/50 focus:border-primary focus:outline-none"
+          className={`flex-1 ${inputClass}`}
+        />
+        <input
+          type="number"
+          placeholder="순서"
+          value={seriesOrder}
+          onChange={(e) => setSeriesOrder(e.target.value)}
+          className={`w-20 ${inputClass}`}
+        />
+        <input
+          type="text"
+          placeholder="커버 이미지 URL (옵션)"
+          value={cover}
+          onChange={(e) => setCover(e.target.value)}
+          className={`flex-1 ${inputClass}`}
         />
       </div>
+
+      {/* Editor */}
       <div data-color-mode="auto">
         <MDEditor
           value={content}
@@ -83,13 +177,32 @@ export default function MarkdownEditor({ onPublish }: MarkdownEditorProps) {
           preview="live"
         />
       </div>
-      <div className="flex justify-end">
+
+      {/* Actions */}
+      <div className="flex items-center justify-between">
+        <div>
+          {isEditMode && onDelete && (
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="rounded-xl border border-red-300 dark:border-red-800 px-5 py-2.5 text-sm font-semibold text-red-500 transition-colors hover:bg-red-50 dark:hover:bg-red-950 disabled:opacity-50"
+            >
+              {deleting ? "삭제 중..." : "삭제하기"}
+            </button>
+          )}
+        </div>
         <button
           onClick={handlePublish}
           disabled={publishing}
-          className="rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-dark disabled:opacity-50"
+          className="rounded-xl bg-primary px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-dark disabled:opacity-50"
         >
-          {publishing ? "발행 중..." : "발행하기"}
+          {publishing
+            ? isEditMode
+              ? "수정 중..."
+              : "발행 중..."
+            : isEditMode
+              ? "수정하기"
+              : "발행하기"}
         </button>
       </div>
     </div>
