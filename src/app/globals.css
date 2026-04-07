@@ -58,6 +58,7 @@ body {
   --tw-prose-headings: var(--foreground);
   --tw-prose-links: var(--color-primary);
   --tw-prose-code: var(--foreground);
+  --tw-prose-pre-code: var(--foreground);
   --tw-prose-pre-bg: var(--code-bg);
   max-width: 100%;
 }
