@@ -63,18 +63,24 @@ export default function PostActions({ slug }: PostActionsProps) {
     }
   }, [slug, router]);
 
-  if (!authenticated) return null;
+  const requireAuth = (action: () => void) => {
+    if (authenticated) {
+      action();
+    } else {
+      router.push(`/write`);
+    }
+  };
 
   return (
     <div className="flex items-center gap-2">
       <button
-        onClick={() => router.push(`/write?slug=${slug}`)}
+        onClick={() => requireAuth(() => router.push(`/write?slug=${slug}`))}
         className="rounded-lg border border-card-border px-3 py-1.5 text-xs font-medium text-muted hover:text-foreground hover:border-foreground/30 transition-colors"
       >
         수정
       </button>
       <button
-        onClick={handleDelete}
+        onClick={() => requireAuth(handleDelete)}
         disabled={deleting}
         className="rounded-lg border border-red-200 dark:border-red-900 px-3 py-1.5 text-xs font-medium text-red-400 hover:text-red-500 hover:border-red-300 dark:hover:border-red-700 transition-colors disabled:opacity-50"
       >
