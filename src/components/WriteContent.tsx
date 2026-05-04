@@ -5,28 +5,27 @@ import { useSearchParams, useRouter } from "next/navigation";
 import MarkdownEditor from "@/components/MarkdownEditor";
 import type { PostFormData } from "@/components/MarkdownEditor";
 
-const OWNER = "posel4";
-const REPO = "posel4.github.io";
-const BRANCH = "main";
-
 export default function WriteContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const editSlug = searchParams.get("slug");
+  const error = searchParams.get("error");
 
-  const [token, setToken] = useState("");
   const [authenticated, setAuthenticated] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
   const [loading, setLoading] = useState(false);
-  const [initialData, setInitialData] = useState<Partial<PostFormData> | undefined>();
+  const [initialData, setInitialData] = useState<
+    Partial<PostFormData> | undefined
+  >();
   const [fileSha, setFileSha] = useState<string | undefined>();
 
-  // Check sessionStorage on mount
+  // Check session on mount
   useEffect(() => {
-    const saved = localStorage.getItem("github_pat");
-    if (saved) {
-      setToken(saved);
-      setAuthenticated(true);
-    }
+    fetch("/api/auth/session")
+      .then((res) => res.json())
+      .then((data) => setAuthenticated(data.authenticated))
+      .catch(() => setAuthenticated(false))
+      .finally(() => setCheckingAuth(false));
   }, []);
 
   // Load existing post for edit mode
@@ -34,27 +33,16 @@ export default function WriteContent() {
     if (!editSlug || !authenticated) return;
 
     const loadPost = async () => {
-      const pat = localStorage.getItem("github_pat");
-      if (!pat) return;
-
       setLoading(true);
       try {
-        const { Octokit } = await import("octokit");
-        const octokit = new Octokit({ auth: pat });
+        const res = await fetch(`/api/posts/${editSlug}`);
+        if (!res.ok) throw new Error("Failed to load");
+        const data = await res.json();
 
-        const res = await octokit.rest.repos.getContent({
-          owner: OWNER,
-          repo: REPO,
-          path: `content/posts/${editSlug}.mdx`,
-          ref: BRANCH,
-        });
-
-        if (Array.isArray(res.data) || res.data.type !== "file") return;
-
-        setFileSha(res.data.sha);
+        setFileSha(data.sha);
 
         const raw = decodeURIComponent(
-          escape(atob(res.data.content.replace(/\n/g, "")))
+          escape(atob(data.content.replace(/\n/g, "")))
         );
 
         // Parse frontmatter
@@ -65,13 +53,17 @@ export default function WriteContent() {
         const content = fmMatch[2].trim();
 
         const getValue = (key: string): string => {
-          const match = frontmatter.match(new RegExp(`^${key}:\\s*(.+)$`, "m"));
+          const match = frontmatter.match(
+            new RegExp(`^${key}:\\s*(.+)$`, "m")
+          );
           if (!match) return "";
           return match[1].replace(/^["']|["']$/g, "").trim();
         };
 
         const getArrayValue = (key: string): string => {
-          const match = frontmatter.match(new RegExp(`^${key}:\\s*\\[(.*)\\]$`, "m"));
+          const match = frontmatter.match(
+            new RegExp(`^${key}:\\s*\\[(.*)\\]$`, "m")
+          );
           if (!match) return "";
           return match[1]
             .split(",")
@@ -101,33 +93,17 @@ export default function WriteContent() {
     loadPost();
   }, [editSlug, authenticated]);
 
-  const handleAuth = useCallback(() => {
-    if (!token.trim()) {
-      alert("GitHub PAT를 입력해주세요.");
-      return;
-    }
-    localStorage.setItem("github_pat", token);
-    setAuthenticated(true);
-  }, [token]);
-
   const handlePublish = useCallback(
     async (data: PostFormData) => {
-      const pat = localStorage.getItem("github_pat");
-      if (!pat) {
-        alert("인증이 필요합니다.");
-        setAuthenticated(false);
-        return;
-      }
+      const slug =
+        editSlug ||
+        data.title
+          .toLowerCase()
+          .replace(/[^a-z0-9가-힣\s-]/g, "")
+          .replace(/\s+/g, "-")
+          .replace(/-+/g, "-");
 
-      const slug = editSlug || data.title
-        .toLowerCase()
-        .replace(/[^a-z0-9가-힣\s-]/g, "")
-        .replace(/\s+/g, "-")
-        .replace(/-+/g, "-");
-
-      const date = editSlug
-        ? (initialData?.title ? new Date().toISOString().split("T")[0] : new Date().toISOString().split("T")[0])
-        : new Date().toISOString().split("T")[0];
+      const date = new Date().toISOString().split("T")[0];
 
       const tagList = data.tags
         .split(",")
@@ -154,125 +130,101 @@ export default function WriteContent() {
         .join("\n");
 
       const fileContent = `${frontMatter}\n\n${data.content}\n`;
-      const filePath = `content/posts/${slug}.mdx`;
 
-      const { Octokit } = await import("octokit");
-      const octokit = new Octokit({ auth: pat });
+      try {
+        const res = await fetch("/api/posts/publish", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            slug,
+            content: fileContent,
+            message: fileSha
+              ? `Update post: ${data.title}`
+              : `Add post: ${data.title}`,
+            sha: fileSha,
+          }),
+        });
 
-      // Get SHA for existing file
-      let sha = fileSha;
-      if (!sha) {
-        try {
-          const existing = await octokit.rest.repos.getContent({
-            owner: OWNER,
-            repo: REPO,
-            path: filePath,
-            ref: BRANCH,
-          });
-          if (!Array.isArray(existing.data) && existing.data.type === "file") {
-            sha = existing.data.sha;
-          }
-        } catch {
-          // New file
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || "Failed to publish");
         }
-      }
 
-      await octokit.rest.repos.createOrUpdateFileContents({
-        owner: OWNER,
-        repo: REPO,
-        path: filePath,
-        message: sha
-          ? `Update post: ${data.title}`
-          : `Add post: ${data.title}`,
-        content: btoa(unescape(encodeURIComponent(fileContent))),
-        sha,
-        branch: BRANCH,
-      });
+        alert(
+          editSlug
+            ? "수정 완료! 잠시 후 사이트에 반영됩니다."
+            : "발행 완료! 잠시 후 사이트에 반영됩니다."
+        );
 
-      alert(
-        editSlug
-          ? "수정 완료! GitHub Actions가 자동으로 배포합니다."
-          : "발행 완료! GitHub Actions가 자동으로 배포합니다."
-      );
-
-      if (editSlug) {
-        router.push(`/posts/${editSlug}`);
+        if (editSlug) {
+          router.push(`/posts/${editSlug}`);
+        }
+      } catch (err) {
+        alert(
+          "발행 실패: " +
+            (err instanceof Error ? err.message : "Unknown error")
+        );
       }
     },
-    [editSlug, fileSha, initialData, router]
+    [editSlug, fileSha, router]
   );
 
   const handleDelete = useCallback(async () => {
     if (!editSlug) return;
 
-    const pat = localStorage.getItem("github_pat");
-    if (!pat) {
-      alert("인증이 필요합니다.");
-      return;
+    try {
+      const res = await fetch(`/api/posts/${editSlug}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete");
+
+      alert("삭제 완료! 잠시 후 사이트에 반영됩니다.");
+      router.push("/");
+    } catch (err) {
+      alert(
+        "삭제 실패: " +
+          (err instanceof Error ? err.message : "Unknown error")
+      );
     }
+  }, [editSlug, router]);
 
-    const filePath = `content/posts/${editSlug}.mdx`;
+  const handleLogout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
+    setAuthenticated(false);
+  };
 
-    const { Octokit } = await import("octokit");
-    const octokit = new Octokit({ auth: pat });
+  // Checking auth state
+  if (checkingAuth) {
+    return (
+      <div className="mx-auto max-w-4xl px-4 py-20 text-center">
+        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-primary border-r-transparent" />
+      </div>
+    );
+  }
 
-    let sha = fileSha;
-    if (!sha) {
-      const existing = await octokit.rest.repos.getContent({
-        owner: OWNER,
-        repo: REPO,
-        path: filePath,
-        ref: BRANCH,
-      });
-      if (!Array.isArray(existing.data) && existing.data.type === "file") {
-        sha = existing.data.sha;
-      }
-    }
-
-    if (!sha) {
-      alert("파일을 찾을 수 없습니다.");
-      return;
-    }
-
-    await octokit.rest.repos.deleteFile({
-      owner: OWNER,
-      repo: REPO,
-      path: filePath,
-      message: `Delete post: ${editSlug}`,
-      sha,
-      branch: BRANCH,
-    });
-
-    alert("삭제 완료! GitHub Actions가 자동으로 배포합니다.");
-    router.push("/");
-  }, [editSlug, fileSha, router]);
-
-  // Auth screen
+  // Auth screen - Login with GitHub
   if (!authenticated) {
     return (
       <div className="mx-auto max-w-xl px-4 py-20">
         <h1 className="text-2xl font-bold text-foreground">Write</h1>
         <p className="mt-2 text-sm text-muted">
-          글을 작성하려면 GitHub Personal Access Token이 필요합니다.
+          글을 작성하려면 GitHub 로그인이 필요합니다.
         </p>
-        <div className="mt-6 space-y-3">
-          <input
-            type="password"
-            placeholder="GitHub PAT (ghp_...)"
-            value={token}
-            onChange={(e) => setToken(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleAuth()}
-            className="w-full rounded-xl border border-card-border bg-card-bg px-4 py-3 text-foreground placeholder:text-muted/50 focus:border-primary focus:outline-none"
-          />
-          <button
-            onClick={handleAuth}
-            className="w-full rounded-xl bg-primary px-4 py-2.5 font-semibold text-white transition-colors hover:bg-primary-dark"
-          >
-            인증하기
-          </button>
-          <p className="text-xs text-muted">
-            PAT는 브라우저에 저장되어 다음에도 자동 로그인됩니다.
+        {error && (
+          <p className="mt-2 text-sm text-red-500">
+            {error === "unauthorized"
+              ? "권한이 없는 계정입니다."
+              : "인증에 실패했습니다. 다시 시도해주세요."}
           </p>
+        )}
+        <div className="mt-6">
+          <a
+            href="/api/auth/login"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#24292f] px-4 py-3 font-semibold text-white transition-colors hover:bg-[#32383f]"
+          >
+            <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+            </svg>
+            Login with GitHub
+          </a>
         </div>
       </div>
     );
@@ -304,11 +256,7 @@ export default function WriteContent() {
             </button>
           )}
           <button
-            onClick={() => {
-              localStorage.removeItem("github_pat");
-              setAuthenticated(false);
-              setToken("");
-            }}
+            onClick={handleLogout}
             className="rounded-xl border border-card-border px-4 py-2 text-sm text-muted hover:text-foreground transition-colors"
           >
             로그아웃

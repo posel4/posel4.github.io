@@ -13,51 +13,27 @@ export default function PostActions({ slug }: PostActionsProps) {
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
-    const pat = localStorage.getItem("github_pat");
-    if (pat) setAuthenticated(true);
+    fetch("/api/auth/session")
+      .then((res) => res.json())
+      .then((data) => setAuthenticated(data.authenticated))
+      .catch(() => setAuthenticated(false));
   }, []);
 
   const handleDelete = useCallback(async () => {
     if (!confirm("정말 이 글을 삭제하시겠습니까?")) return;
 
-    const pat = localStorage.getItem("github_pat");
-    if (!pat) {
-      alert("인증이 필요합니다. Write 페이지에서 먼저 인증해주세요.");
-      return;
-    }
-
     setDeleting(true);
     try {
-      const { Octokit } = await import("octokit");
-      const octokit = new Octokit({ auth: pat });
+      const res = await fetch(`/api/posts/${slug}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete");
 
-      const filePath = `content/posts/${slug}.mdx`;
-
-      const existing = await octokit.rest.repos.getContent({
-        owner: "posel4",
-        repo: "posel4.github.io",
-        path: filePath,
-        ref: "main",
-      });
-
-      if (Array.isArray(existing.data) || existing.data.type !== "file") {
-        alert("파일을 찾을 수 없습니다.");
-        return;
-      }
-
-      await octokit.rest.repos.deleteFile({
-        owner: "posel4",
-        repo: "posel4.github.io",
-        path: filePath,
-        message: `Delete post: ${slug}`,
-        sha: existing.data.sha,
-        branch: "main",
-      });
-
-      alert("삭제 완료! GitHub Actions가 자동으로 배포합니다.");
+      alert("삭제 완료! 잠시 후 사이트에 반영됩니다.");
       router.push("/");
     } catch (err) {
-      alert("삭제 실패: " + (err instanceof Error ? err.message : "Unknown error"));
+      alert(
+        "삭제 실패: " +
+          (err instanceof Error ? err.message : "Unknown error")
+      );
     } finally {
       setDeleting(false);
     }

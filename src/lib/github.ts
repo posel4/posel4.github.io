@@ -56,3 +56,48 @@ export async function getFileSha(
 
   return undefined;
 }
+
+export async function getFileContent(
+  token: string,
+  path: string
+): Promise<{ content: string; sha: string } | null> {
+  const octokit = new Octokit({ auth: token });
+
+  try {
+    const response = await octokit.rest.repos.getContent({
+      owner: REPO_OWNER,
+      repo: REPO_NAME,
+      path,
+      ref: "main",
+    });
+
+    if (!Array.isArray(response.data) && response.data.type === "file") {
+      return {
+        content: response.data.content,
+        sha: response.data.sha,
+      };
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
+export async function deleteFile(
+  token: string,
+  path: string,
+  sha: string,
+  message: string
+) {
+  const octokit = new Octokit({ auth: token });
+
+  await octokit.rest.repos.deleteFile({
+    owner: REPO_OWNER,
+    repo: REPO_NAME,
+    path,
+    message,
+    sha,
+    branch: "main",
+  });
+}
