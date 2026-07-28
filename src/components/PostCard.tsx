@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import type { PostMeta } from "@/lib/posts";
 import TagBadge from "./TagBadge";
 
@@ -8,48 +9,49 @@ interface PostCardProps {
 
 export default function PostCard({ post }: PostCardProps) {
   return (
-    <article className="group flex flex-col overflow-hidden rounded-2xl bg-card-bg shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
-      {post.cover && (
-        <div className="aspect-video overflow-hidden">
-          <img
-            src={post.cover}
-            alt={post.title}
-            className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
-          />
+    <article className="group grid gap-5 py-8 first:pt-0 sm:grid-cols-[1fr_auto] sm:items-start">
+      <div className="min-w-0">
+        <div className="mb-3 flex flex-wrap items-center gap-2 text-xs font-semibold text-muted">
+          <time dateTime={post.date}>
+            {new Date(post.date).toLocaleDateString("ko-KR", {
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+            })}
+          </time>
+          {post.categories[0] && (
+            <>
+              <span className="text-card-border">/</span>
+              <span className="text-primary">{post.categories[0]}</span>
+            </>
+          )}
         </div>
-      )}
-      <div className="flex flex-1 flex-col py-6 px-5">
-        <Link href={`/posts/${post.slug}`} className="group/title">
-          <h2 className="text-xl font-bold leading-snug text-foreground group-hover/title:text-primary transition-colors line-clamp-2">
+        <Link href={`/posts/${post.slug}`} className="block">
+          <h3 className="font-display text-2xl font-semibold leading-snug tracking-[-.015em] text-foreground transition-colors group-hover:text-primary sm:text-[1.7rem]">
             {post.title}
-          </h2>
+          </h3>
+          <p className="mt-3 max-w-2xl text-sm leading-7 text-muted line-clamp-2">
+            {post.description}
+          </p>
         </Link>
-        <p className="mt-3 flex-1 text-sm leading-relaxed text-muted line-clamp-3">
-          {post.description}
-        </p>
         <div className="mt-4 flex flex-wrap gap-1.5">
           {post.tags.slice(0, 4).map((tag) => (
             <TagBadge key={tag} tag={tag} />
           ))}
         </div>
-        <div className="mt-4 flex items-center justify-between text-xs text-muted">
-          <time dateTime={post.date}>
-            {new Date(post.date).toLocaleDateString("ko-KR", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })}
-          </time>
-          {post.series && (
-            <Link
-              href={`/series/${encodeURIComponent(post.series)}`}
-              className="text-primary hover:underline"
-            >
-              {post.series}
-            </Link>
-          )}
-        </div>
       </div>
+      {post.cover && (
+        <div className="aspect-[4/3] w-full overflow-hidden rounded-xl border border-card-border sm:w-44">
+          <Image
+            src={post.cover}
+            alt={post.title}
+            width={352}
+            height={264}
+            unoptimized
+            className="h-full w-full object-cover grayscale-[15%] transition duration-300 group-hover:scale-105 group-hover:grayscale-0"
+          />
+        </div>
+      )}
     </article>
   );
 }

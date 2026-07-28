@@ -73,7 +73,7 @@ export async function getFileContent(
 
     if (!Array.isArray(response.data) && response.data.type === "file") {
       return {
-        content: response.data.content,
+        content: Buffer.from(response.data.content, "base64").toString("utf8"),
         sha: response.data.sha,
       };
     }

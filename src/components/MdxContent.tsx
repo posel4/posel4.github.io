@@ -16,7 +16,7 @@ const rehypePrettyCodeOptions = {
 
 export default function MdxContent({ source }: MdxContentProps) {
   return (
-    <div className="prose prose-lg dark:prose-invert max-w-none">
+    <div className="prose prose-lg prose-headings:tracking-[-.02em] prose-hr:border-card-border dark:prose-invert max-w-none">
       <MDXRemote
         source={source}
         options={{

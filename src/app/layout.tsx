@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     default: "posel4.dev",
     template: "%s | posel4.dev",
   },
-  description: "개발 블로그 - 인증, WebSocket, 그리고 그 너머",
+  description: "실시간 시스템을 만들고 운영하며 배운 것을 기록합니다.",
 };
 
 export default function RootLayout({

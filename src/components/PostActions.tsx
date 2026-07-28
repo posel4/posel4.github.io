@@ -47,6 +47,8 @@ export default function PostActions({ slug }: PostActionsProps) {
     }
   };
 
+  if (!authenticated) return null;
+
   return (
     <div className="flex items-center gap-2">
       <button

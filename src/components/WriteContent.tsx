@@ -18,6 +18,7 @@ export default function WriteContent() {
     Partial<PostFormData> | undefined
   >();
   const [fileSha, setFileSha] = useState<string | undefined>();
+  const [publishedDate, setPublishedDate] = useState<string | undefined>();
 
   // Check session on mount
   useEffect(() => {
@@ -40,47 +41,18 @@ export default function WriteContent() {
         const data = await res.json();
 
         setFileSha(data.sha);
-
-        const raw = decodeURIComponent(
-          escape(atob(data.content.replace(/\n/g, "")))
-        );
-
-        // Parse frontmatter
-        const fmMatch = raw.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
-        if (!fmMatch) return;
-
-        const frontmatter = fmMatch[1];
-        const content = fmMatch[2].trim();
-
-        const getValue = (key: string): string => {
-          const match = frontmatter.match(
-            new RegExp(`^${key}:\\s*(.+)$`, "m")
-          );
-          if (!match) return "";
-          return match[1].replace(/^["']|["']$/g, "").trim();
-        };
-
-        const getArrayValue = (key: string): string => {
-          const match = frontmatter.match(
-            new RegExp(`^${key}:\\s*\\[(.*)\\]$`, "m")
-          );
-          if (!match) return "";
-          return match[1]
-            .split(",")
-            .map((s) => s.trim().replace(/^["']|["']$/g, ""))
-            .filter(Boolean)
-            .join(", ");
-        };
+        const post = data.post;
+        setPublishedDate(post.date);
 
         setInitialData({
-          title: getValue("title"),
-          description: getValue("description"),
-          categories: getArrayValue("categories"),
-          tags: getArrayValue("tags"),
-          series: getValue("series"),
-          seriesOrder: getValue("seriesOrder"),
-          cover: getValue("cover"),
-          content,
+          title: post.title,
+          description: post.description,
+          categories: post.categories.join(", "),
+          tags: post.tags.join(", "),
+          series: post.series,
+          seriesOrder: post.seriesOrder,
+          cover: post.cover,
+          content: post.content,
         });
       } catch (err) {
         console.error("Failed to load post:", err);
@@ -103,8 +75,6 @@ export default function WriteContent() {
           .replace(/\s+/g, "-")
           .replace(/-+/g, "-");
 
-      const date = new Date().toISOString().split("T")[0];
-
       const tagList = data.tags
         .split(",")
         .map((t) => t.trim())
@@ -114,34 +84,20 @@ export default function WriteContent() {
         .map((c) => c.trim())
         .filter(Boolean);
 
-      const frontMatter = [
-        "---",
-        `title: "${data.title}"`,
-        `date: "${date}"`,
-        `description: "${data.description || data.content.slice(0, 150)}"`,
-        `categories: [${catList.map((c) => `"${c}"`).join(", ")}]`,
-        `tags: [${tagList.map((t) => `"${t}"`).join(", ")}]`,
-        data.series ? `series: "${data.series}"` : null,
-        data.seriesOrder ? `seriesOrder: ${data.seriesOrder}` : null,
-        data.cover ? `cover: "${data.cover}"` : null,
-        "---",
-      ]
-        .filter(Boolean)
-        .join("\n");
-
-      const fileContent = `${frontMatter}\n\n${data.content}\n`;
-
       try {
         const res = await fetch("/api/posts/publish", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             slug,
-            content: fileContent,
-            message: fileSha
-              ? `Update post: ${data.title}`
-              : `Add post: ${data.title}`,
             sha: fileSha,
+            post: {
+              ...data,
+              date: publishedDate,
+              description: data.description || data.content.slice(0, 150),
+              categories: catList,
+              tags: tagList,
+            },
           }),
         });
 
@@ -156,9 +112,8 @@ export default function WriteContent() {
             : "발행 완료! 잠시 후 사이트에 반영됩니다."
         );
 
-        if (editSlug) {
-          router.push(`/posts/${editSlug}`);
-        }
+        router.push(`/posts/${slug}`);
+        router.refresh();
       } catch (err) {
         alert(
           "발행 실패: " +
@@ -166,7 +121,7 @@ export default function WriteContent() {
         );
       }
     },
-    [editSlug, fileSha, router]
+    [editSlug, fileSha, publishedDate, router]
   );
 
   const handleDelete = useCallback(async () => {
@@ -241,11 +196,14 @@ export default function WriteContent() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-10">
+    <div className="mx-auto max-w-6xl px-5 py-10 sm:px-8 sm:py-14">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">
-          {editSlug ? "Edit Post" : "Write"}
-        </h1>
+        <div>
+          <p className="eyebrow">EDITOR</p>
+          <h1 className="mt-2 font-display text-3xl font-semibold text-foreground">
+            {editSlug ? "글 다듬기" : "새 글 쓰기"}
+          </h1>
+        </div>
         <div className="flex items-center gap-2">
           {editSlug && (
             <button

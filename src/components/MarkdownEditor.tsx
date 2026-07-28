@@ -103,17 +103,17 @@ export default function MarkdownEditor({
   }, [onDelete]);
 
   const inputClass =
-    "w-full rounded-xl border border-card-border bg-card-bg px-4 py-2.5 text-sm text-foreground placeholder:text-muted/50 focus:border-primary focus:outline-none transition-colors";
+    "w-full rounded-lg border border-card-border bg-card-bg px-4 py-3 text-sm text-foreground placeholder:text-muted/50 focus:border-primary focus:outline-none focus:ring-3 focus:ring-primary/10 transition";
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5 rounded-2xl border border-card-border bg-card-bg p-5 shadow-[0_20px_60px_-45px_rgba(15,23,42,.5)] sm:p-8">
       {/* Title */}
       <input
         type="text"
         placeholder="제목을 입력하세요"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        className="w-full rounded-xl border border-card-border bg-card-bg px-4 py-3 text-2xl font-bold text-foreground placeholder:text-muted/50 focus:border-primary focus:outline-none transition-colors"
+        className="w-full border-0 border-b border-card-border bg-transparent px-0 py-3 font-display text-3xl font-semibold text-foreground placeholder:text-muted/40 focus:border-primary focus:outline-none"
       />
 
       {/* Description */}
@@ -126,7 +126,7 @@ export default function MarkdownEditor({
       />
 
       {/* Categories + Tags */}
-      <div className="flex gap-3">
+      <div className="grid gap-3 sm:grid-cols-2">
         <input
           type="text"
           placeholder="카테고리 (쉼표 구분)"
@@ -144,7 +144,7 @@ export default function MarkdownEditor({
       </div>
 
       {/* Series + Order + Cover */}
-      <div className="flex gap-3">
+      <div className="grid gap-3 sm:grid-cols-[1fr_7rem_1.5fr]">
         <input
           type="text"
           placeholder="시리즈 (옵션)"
@@ -157,7 +157,7 @@ export default function MarkdownEditor({
           placeholder="순서"
           value={seriesOrder}
           onChange={(e) => setSeriesOrder(e.target.value)}
-          className={`w-20 ${inputClass}`}
+          className={inputClass}
         />
         <input
           type="text"
@@ -169,7 +169,7 @@ export default function MarkdownEditor({
       </div>
 
       {/* Editor */}
-      <div data-color-mode="auto">
+      <div data-color-mode="auto" className="overflow-hidden rounded-lg border border-card-border">
         <MDEditor
           value={content}
           onChange={(val) => setContent(val || "")}

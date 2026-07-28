@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { getFileContent, deleteFile } from "@/lib/github";
+import matter from "gray-matter";
 
 type RouteParams = { params: Promise<{ slug: string }> };
+
+function isValidSlug(slug: string) {
+  return /^[a-z0-9가-힣][a-z0-9가-힣-]*$/.test(slug);
+}
 
 export async function GET(_request: NextRequest, { params }: RouteParams) {
   const session = await getSession();
@@ -11,6 +16,9 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
   }
 
   const { slug } = await params;
+  if (!isValidSlug(slug)) {
+    return NextResponse.json({ error: "Invalid slug" }, { status: 400 });
+  }
   const filePath = `content/posts/${slug}.mdx`;
 
   try {
@@ -18,7 +26,22 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
     if (!file) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
-    return NextResponse.json({ content: file.content, sha: file.sha });
+    const { data, content } = matter(file.content);
+    return NextResponse.json({
+      post: {
+        slug,
+        title: data.title || "",
+        date: data.date || "",
+        description: data.description || "",
+        categories: data.categories || [],
+        tags: data.tags || [],
+        series: data.series || "",
+        seriesOrder: data.seriesOrder?.toString() || "",
+        cover: data.cover || "",
+        content: content.trim(),
+      },
+      sha: file.sha,
+    });
   } catch {
     return NextResponse.json({ error: "Failed to fetch" }, { status: 500 });
   }
@@ -31,6 +54,9 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
   }
 
   const { slug } = await params;
+  if (!isValidSlug(slug)) {
+    return NextResponse.json({ error: "Invalid slug" }, { status: 400 });
+  }
   const filePath = `content/posts/${slug}.mdx`;
 
   try {

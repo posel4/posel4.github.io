@@ -7,7 +7,9 @@ import {
 
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code");
-  if (!code) {
+  const state = request.nextUrl.searchParams.get("state");
+  const expectedState = request.cookies.get("oauth_state")?.value;
+  if (!code || !state || !expectedState || state !== expectedState) {
     return NextResponse.redirect(new URL("/write?error=no_code", request.url));
   }
 
@@ -58,5 +60,6 @@ export async function GET(request: NextRequest) {
 
   const response = NextResponse.redirect(new URL("/write", request.url));
   response.cookies.set("session", sessionValue, COOKIE_OPTIONS);
+  response.cookies.delete("oauth_state");
   return response;
 }

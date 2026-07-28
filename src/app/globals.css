@@ -4,29 +4,29 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --color-primary: #12b886;
-  --color-primary-dark: #0ca678;
-  --background: #f9fafb;
-  --foreground: #111827;
-  --card-bg: #ffffff;
-  --card-border: #e5e7eb;
-  --muted: #6b7280;
-  --code-bg: #f6f8fa;
-  --sidebar-bg: #ffffff;
-  --sidebar-border: #f3f4f6;
-  --sidebar-hover: #f9fafb;
+  --color-primary: #e45b32;
+  --color-primary-dark: #bf4321;
+  --background: #f7f4ee;
+  --foreground: #1d211f;
+  --card-bg: #fffdf9;
+  --card-border: #ddd7cd;
+  --muted: #696d68;
+  --code-bg: #efebe3;
+  --sidebar-bg: #fffdf9;
+  --sidebar-border: #e7e1d7;
+  --sidebar-hover: #eee9e0;
 }
 
 .dark {
-  --background: #030712;
-  --foreground: #f3f4f6;
-  --card-bg: #111827;
-  --card-border: #1f2937;
-  --muted: #9ca3af;
-  --code-bg: #1e1e1e;
-  --sidebar-bg: #0a0f1a;
-  --sidebar-border: #1f2937;
-  --sidebar-hover: #111827;
+  --background: #171817;
+  --foreground: #f1eee7;
+  --card-bg: #202220;
+  --card-border: #393b37;
+  --muted: #a8aaa5;
+  --code-bg: #282a27;
+  --sidebar-bg: #202220;
+  --sidebar-border: #333530;
+  --sidebar-hover: #292b28;
 }
 
 @theme inline {
@@ -39,9 +39,10 @@
   --color-sidebar-bg: var(--sidebar-bg);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-hover: var(--sidebar-hover);
-  --color-primary: #12b886;
-  --color-primary-dark: #0ca678;
-  --font-sans: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+  --color-primary: #e45b32;
+  --color-primary-dark: #bf4321;
+  --font-sans: 'Pretendard', 'Apple SD Gothic Neo', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-display: Georgia, 'Noto Serif KR', serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 }
 
@@ -50,6 +51,29 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
   transition: background-color 0.2s, color 0.2s;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-primary) 25%, transparent);
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.eyebrow {
+  color: var(--color-primary);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+}
+
+.paper-grid {
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--card-border) 45%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--card-border) 45%, transparent) 1px, transparent 1px);
+  background-size: 28px 28px;
+  mask-image: linear-gradient(to bottom, black, transparent);
 }
 
 /* Typography prose overrides */
@@ -61,6 +85,22 @@ body {
   --tw-prose-pre-code: var(--foreground);
   --tw-prose-pre-bg: var(--code-bg);
   max-width: 100%;
+}
+
+.prose h1,
+.prose h2,
+.prose h3 {
+  font-family: var(--font-display);
+  scroll-margin-top: 6rem;
+}
+
+.prose p,
+.prose li {
+  line-height: 1.95;
+}
+
+.prose a {
+  text-underline-offset: 0.2em;
 }
 
 .prose pre {

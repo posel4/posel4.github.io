@@ -7,7 +7,7 @@ interface TagBadgeProps {
 
 export default function TagBadge({ tag, clickable = true }: TagBadgeProps) {
   const className =
-    "inline-block rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors";
+    "inline-block rounded-full border border-card-border px-2.5 py-0.5 text-[11px] font-semibold text-muted transition-colors hover:border-primary/40 hover:text-primary";
 
   if (clickable) {
     return (

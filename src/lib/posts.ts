@@ -4,6 +4,12 @@ import matter from "gray-matter";
 
 const postsDirectory = path.join(process.cwd(), "content/posts");
 
+function ensurePostsDirectory() {
+  if (!fs.existsSync(postsDirectory)) {
+    fs.mkdirSync(postsDirectory, { recursive: true });
+  }
+}
+
 export interface PostMeta {
   slug: string;
   title: string;
@@ -21,6 +27,7 @@ export interface Post extends PostMeta {
 }
 
 export function getAllPosts(): PostMeta[] {
+  ensurePostsDirectory();
   const fileNames = fs.readdirSync(postsDirectory);
   const posts = fileNames
     .filter((name) => name.endsWith(".mdx"))
@@ -49,6 +56,9 @@ export function getAllPosts(): PostMeta[] {
 }
 
 export function getPostBySlug(slug: string): Post {
+  if (!/^[a-z0-9가-힣][a-z0-9가-힣-]*$/.test(slug)) {
+    throw new Error("Invalid slug");
+  }
   const fullPath = path.join(postsDirectory, `${slug}.mdx`);
   const fileContents = fs.readFileSync(fullPath, "utf8");
   const { data, content } = matter(fileContents);
@@ -127,6 +137,7 @@ export function getPostsByCategory(category: string): PostMeta[] {
 }
 
 export function getAllSlugs(): string[] {
+  ensurePostsDirectory();
   const fileNames = fs.readdirSync(postsDirectory);
   return fileNames
     .filter((name) => name.endsWith(".mdx"))

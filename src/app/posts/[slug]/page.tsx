@@ -42,15 +42,27 @@ export default async function PostPage({ params }: PostPageProps) {
   const seriesPosts = post.series ? getPostsBySeries(post.series) : [];
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10">
-      <div className="flex gap-10">
+    <div className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-20">
+      <div className="flex gap-14">
         {/* Main content */}
         <article className="min-w-0 flex-1">
-          <header className="mb-8">
-            <h1 className="text-3xl font-bold leading-tight text-foreground md:text-4xl">
+          <header className="mb-12 border-b border-card-border pb-10">
+            <div className="mb-5 flex flex-wrap items-center gap-2">
+              {post.categories.map((cat) => (
+                <span key={cat} className="eyebrow">
+                  {cat.toUpperCase()}
+                </span>
+              ))}
+            </div>
+            <h1 className="max-w-4xl font-display text-4xl font-semibold leading-[1.2] tracking-[-.03em] text-foreground md:text-6xl">
               {post.title}
             </h1>
-            <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-muted">
+            {post.description && (
+              <p className="mt-6 max-w-3xl text-lg leading-8 text-muted">
+                {post.description}
+              </p>
+            )}
+            <div className="mt-7 flex flex-wrap items-center gap-3 text-sm text-muted">
               <time dateTime={post.date}>
                 {new Date(post.date).toLocaleDateString("ko-KR", {
                   year: "numeric",
@@ -58,11 +70,8 @@ export default async function PostPage({ params }: PostPageProps) {
                   day: "numeric",
                 })}
               </time>
-              {post.categories.map((cat) => (
-                <span key={cat} className="rounded bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-xs">
-                  {cat}
-                </span>
-              ))}
+              <span>·</span>
+              <span>posel4</span>
               <PostActions slug={slug} />
             </div>
             <div className="mt-3 flex flex-wrap gap-1.5">
@@ -82,12 +91,14 @@ export default async function PostPage({ params }: PostPageProps) {
             </div>
           )}
 
-          <MdxContent source={post.content} />
+          <div className="mx-auto max-w-3xl">
+            <MdxContent source={post.content} />
+          </div>
         </article>
 
         {/* TOC sidebar (desktop only) */}
         {tocItems.length > 0 && (
-          <aside className="hidden w-64 shrink-0 xl:block">
+          <aside className="hidden w-60 shrink-0 xl:block">
             <TableOfContents items={tocItems} />
           </aside>
         )}
